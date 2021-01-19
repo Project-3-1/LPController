@@ -8,7 +8,7 @@
     A=1.3
   V=[22..31] -> 31 for smooth usage
    
-   - Can run at stepsPerRevolution=200 and rotationsPerSecond=4
+   - Can run at stepsPerRevolution=200 and rotation600sPerSecond=4
     A=1.3
   V=6 (smoothly)
   
@@ -25,13 +25,13 @@
 //#include <Math.h>
 
 const int STEPS_PER_REVOLUTION = 200;
-const int rotationsPerSecond = 1;
-const double MAX_SPEED = STEPS_PER_REVOLUTION * rotationsPerSecond;
+const double rotationsPerSecond = 1; // highest tested (successful landing: 1.4 -> 0.35m/s);
+const double MAX_SPEED = STEPS_PER_REVOLUTION * rotationsPerSecond / 3.14159;
 
-const double ZAEHNE = 20;
-const double ZAEHNE_ABSTAND = 2;
+const double ZAEHNE = 1; //20;
+const double ZAEHNE_ABSTAND = 8; //2;
 const double REVOLUTION = (ZAEHNE * ZAEHNE_ABSTAND); 
-const double STEP_DISTANCE = REVOLUTION / STEPS_PER_REVOLUTION; //<- How much do we travel per step?
+const double STEP_DISTANCE = REVOLUTION / STEPS_PER_REVOLUTION * 3.14159; //<- How much do we travel per step?
 
 const bool INVERSE_STEPS = false; // doesnt work i think
 
@@ -51,7 +51,7 @@ const int X_T_HOMER_MIN = 5;
 const int X_T_HOMER_MAX = 6;
 
 int X_STEP_COUNTER = -1;
-int X_STEP_MAX = -1;
+int X_STEP_MAX = 20000; //TODO change back for homing
 
 
 void setup() {
@@ -78,7 +78,7 @@ void setup() {
 bool runLoop = false;
 int turns = 10000;
 short dir = 1;
-int mode = 0;
+int mode = 1;
 
 void loop() {
   
@@ -100,8 +100,10 @@ void loop() {
       } else if(read.equals("step")) {
         stepper.step(1);
       } else if(read.equals("fr")) {
+        stepper.setSpeed(MAX_SPEED);
         stepper.step(200);
       } else if(read.equals("-fr")) {
+        stepper.setSpeed(MAX_SPEED);
         stepper.step(-200);
       } else if(read.startsWith("mode")) {
         mode = read.substring(5).toInt();
@@ -145,23 +147,24 @@ void homing() {
 double error = 0;
 int move(double distance, int mode, int errfef) {
   
-  double rev = (double) distance / (double) STEP_DISTANCE;
+  double rev = ((double) (distance) / (double) STEP_DISTANCE);
   if(INVERSE_STEPS) {
     rev *= -1;
   }
   
   Serial.println("rev: " + (String) rev + ", distance: " + (String) distance + ", STEP_DISTANCE: " + (String) STEP_DISTANCE);
-  if(!HOMING_MODE && (X_STEP_COUNTER + rev < 0 || X_STEP_COUNTER + rev > X_STEP_MAX)) {
+  if(false && !HOMING_MODE && (X_STEP_COUNTER + rev < 0 || X_STEP_COUNTER + rev > X_STEP_MAX)) {
     Serial.println("Illegal move");
     return -1;
   }
+
 
   if(!HOMING_MODE) {
     X_STEP_COUNTER += rev;
   }
   
-  double easeIn = .05D;
-  double easeOut = .05D;
+  double easeIn = .15D;
+  double easeOut = .15D;
   double sign = copysignf(1.0, rev);
   rev = abs(rev);
   
